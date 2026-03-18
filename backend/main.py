@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import os
 
-from backend.database import init_db, save_profile, get_profiles, get_profile_by_id
+from backend.database import init_db, save_profile, get_profiles, get_profile_by_id, update_profile, delete_profile
 from backend.parse_utils import parse_file
 from backend.llm_service import parse_resume_with_llm
 
@@ -91,3 +91,27 @@ async def get_profile(profile_id: int):
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     return profile
+
+class UpdateProfileNameRequest(BaseModel):
+    name: str
+
+@app.put("/api/profiles/{profile_id}")
+async def update_profile_endpoint(profile_id: int, request: UpdateProfileNameRequest):
+    if not request.name.strip():
+        raise HTTPException(status_code=400, detail="Profile name cannot be empty.")
+    
+    profile = get_profile_by_id(profile_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+        
+    update_profile(profile_id, request.name)
+    return {"message": "Profile updated successfully"}
+
+@app.delete("/api/profiles/{profile_id}")
+async def delete_profile_endpoint(profile_id: int):
+    profile = get_profile_by_id(profile_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+        
+    delete_profile(profile_id)
+    return {"message": "Profile deleted successfully"}

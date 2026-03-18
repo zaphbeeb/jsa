@@ -51,3 +51,17 @@ def get_profile_by_id(profile_id: int):
     if row:
         return dict(row)
     return None
+
+def update_profile(profile_id: int, name: str):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE profiles SET name = ? WHERE id = ?', (name, profile_id))
+    conn.commit()
+    conn.close()
+
+def delete_profile(profile_id: int):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM profiles WHERE id = ?', (profile_id,))
+    conn.commit()
+    conn.close()

@@ -18,18 +18,18 @@ def parse_resume_with_llm(resume_text: str) -> str:
         client = genai.Client(api_key=api_key)
         
         prompt = """
-        You are an expert technical recruiter and resume parser.
-        Please carefully read the following resume text and extract the key skills and experience of the individual.
+        You are an expert technical recruiter analyzing a resume to identify key job-search actionable items.
+        Please carefully read the following resume text and extract ONLY the most critical, quantifiable data points and skills relevant for job searching.
         Format your response purely in Markdown. Use headers, bullet points, and bold text for readability.
-        
-        Your response should include:
-        1. An executive summary of the candidate's profile.
-        2. A distinct section listing all Technical and Soft Skills.
-        3. A clear chronological breakdown of their Work Experience, including company names, roles, duration, and key accomplishments.
-        4. Education and Certifications.
-        
-        IMPORTANT: Provide ONLY the requested markdown report without conversational filler.
 
+        Your extraction MUST focus on:
+        1. **Quantifiable Experience**: For example, "10 years experience in Java", "Led a team of 15 engineers", or "Improved performance by 20%".
+        2. **Core Technical/Hard Skills**: A concise list of programming languages, frameworks, tools, or methodologies the candidate is proficient in.
+        3. **Major Achievements & Projects**: High-impact accomplishments that show value to a potential employer.
+        4. **Education & Key Certifications**: Only brief mentions of relevant degrees or certs (e.g., "AWS Certified Solutions Architect", "B.S. in Computer Science").
+
+        Do NOT just regurgitate the resume content. Do NOT include conversational filler. Synthesize the text into a highly actionable recruiter summary.
+        
         Resume Text:
         ---
         {text}

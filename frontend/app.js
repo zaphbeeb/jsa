@@ -215,18 +215,75 @@ async function loadProfiles() {
         profiles.forEach(p => {
             const li = document.createElement('li');
             li.className = 'profile-item';
+            li.style.display = 'flex';
+            li.style.justifyContent = 'space-between';
+            li.style.alignItems = 'center';
             const dateStr = new Date(p.created_at).toLocaleDateString();
             
             li.innerHTML = `
-                <span class="name">${p.name}</span>
-                <span class="date">${dateStr}</span>
+                <div class="profile-info" style="display:flex; flex-direction:column; cursor:pointer; flex:1;">
+                    <span class="name">${p.name}</span>
+                    <span class="date">${dateStr}</span>
+                </div>
+                <div class="profile-actions" style="display:flex; gap:0.5rem;">
+                    <button class="btn secondary small edit-profile-btn" data-id="${p.id}">Edit</button>
+                    <button class="btn danger small delete-profile-btn" data-id="${p.id}">Del</button>
+                </div>
             `;
             
-            li.addEventListener('click', () => fetchProfile(p.id));
+            li.querySelector('.profile-info').addEventListener('click', () => fetchProfile(p.id));
+            
+            li.querySelector('.edit-profile-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                editProfileName(p.id, p.name);
+            });
+
+            li.querySelector('.delete-profile-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteProfile(p.id);
+            });
+
             profilesList.appendChild(li);
         });
     } catch (err) {
         console.error("Failed to load profiles", err);
+    }
+}
+
+async function editProfileName(id, currentName) {
+    const newName = prompt("Enter new profile name:", currentName);
+    if (!newName || newName.trim() === "" || newName === currentName) return;
+    
+    try {
+        const req = await fetch(`${PROFILES_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName })
+        });
+        if (req.ok) {
+            loadProfiles();
+        } else {
+            throw new Error(await req.text());
+        }
+    } catch (err) {
+        alert("Failed to update profile name: " + err.message);
+    }
+}
+
+async function deleteProfile(id) {
+    if (!confirm("Are you sure you want to delete this profile?")) return;
+    
+    try {
+        const req = await fetch(`${PROFILES_URL}/${id}`, {
+            method: 'DELETE'
+        });
+        if (req.ok) {
+            loadProfiles();
+        } else {
+            throw new Error(await req.text());
+        }
+    } catch (err) {
+        alert("Failed to delete profile: " + err.message);
     }
 }
 
