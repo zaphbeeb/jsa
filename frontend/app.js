@@ -22,7 +22,21 @@ const confirmSaveBtn = document.getElementById('confirm-save-btn');
 const cancelSaveBtn = document.getElementById('cancel-save-btn');
 const profilesList = document.getElementById('profiles-list');
 
-// Tabs setup
+// Main Tabs setup
+document.querySelectorAll('.main-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.main-tab-content').forEach(c => c.classList.add('hidden'));
+        document.querySelectorAll('.main-tab-content').forEach(c => c.classList.remove('active'));
+        
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-main-tab') + '-tab';
+        document.getElementById(tabId).classList.remove('hidden');
+        document.getElementById(tabId).classList.add('active');
+    });
+});
+
+// Original Tabs setup (within Resume Parser)
 document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -292,10 +306,95 @@ async function fetchProfile(id) {
         const req = await fetch(`${PROFILES_URL}/${id}`);
         const data = await req.json();
         handleResult(data.original_text || '', data.parsed_markdown);
+        // Switch to resume-parser tab when loading a profile
+        document.querySelector('[data-main-tab="resume-parser"]').click();
     } catch (err) {
         alert("Failed to load profile details.");
     }
 }
 
+// Company Tracker Logic
+const trackJobsBtn = document.getElementById('track-jobs-btn');
+const locationsInput = document.getElementById('locations-input');
+const companiesInput = document.getElementById('companies-input');
+const trackerResultsContent = document.getElementById('tracker-results-content');
+const trackerLoading = document.getElementById('tracker-loading');
+const jobCountBadge = document.getElementById('job-count-badge');
+
+trackJobsBtn.addEventListener('click', async () => {
+    const locations = locationsInput.value.trim();
+    const companies = companiesInput.value.trim();
+    
+    if (!locations || !companies) {
+        return alert("Please enter both locations and companies.");
+    }
+    
+    setTrackerLoading(true);
+    trackerResultsContent.innerHTML = '';
+    jobCountBadge.classList.add('hidden');
+    
+    try {
+        const req = await fetch('/api/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ locations, companies })
+        });
+        
+        if (!req.ok) throw new Error(await req.text());
+        
+        const jobs = await req.json();
+        renderTrackerResults(jobs);
+    } catch (err) {
+        alert("Error tracking jobs: " + err.message);
+        trackerResultsContent.innerHTML = '<div class="empty-state"><p>Failed to load jobs. Please try again.</p></div>';
+    } finally {
+        setTrackerLoading(false);
+    }
+});
+
+function setTrackerLoading(isLoading) {
+    if (isLoading) {
+        trackJobsBtn.classList.add('hidden');
+        trackerLoading.classList.remove('hidden');
+    } else {
+        trackJobsBtn.classList.remove('hidden');
+        trackerLoading.classList.add('hidden');
+    }
+}
+
+function renderTrackerResults(jobs) {
+    if (!jobs || jobs.length === 0) {
+        trackerResultsContent.innerHTML = '<div class="empty-state"><p>No jobs found for these criteria.</p></div>';
+        jobCountBadge.classList.add('hidden');
+        return;
+    }
+    
+    jobCountBadge.textContent = `${jobs.length} Roles`;
+    jobCountBadge.classList.remove('hidden');
+    
+    trackerResultsContent.innerHTML = '';
+    jobs.forEach(job => {
+        const div = document.createElement('div');
+        div.className = 'job-card';
+        
+        div.innerHTML = `
+            <div class="job-header">
+                <div class="job-title">${job.title}</div>
+                <div class="badge">${job.company}</div>
+            </div>
+            <div class="job-meta">
+                <span>📍 ${job.location}</span>
+                ${job.date ? `<span>📅 ${job.date}</span>` : ''}
+            </div>
+            <div class="job-description">${job.description || 'No description available.'}</div>
+            <div class="job-footer">
+                <a href="${job.url}" target="_blank" class="btn secondary small">View Details</a>
+            </div>
+        `;
+        trackerResultsContent.appendChild(div);
+    });
+}
+
 // Init
 window.addEventListener('DOMContentLoaded', loadProfiles);
+

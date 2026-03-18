@@ -8,6 +8,7 @@ import os
 from backend.database import init_db, save_profile, get_profiles, get_profile_by_id, update_profile, delete_profile
 from backend.parse_utils import parse_file
 from backend.llm_service import parse_resume_with_llm
+from backend.tracker_utils import track_company_jobs
 
 app = FastAPI(title="Resume Parser AI")
 
@@ -115,3 +116,18 @@ async def delete_profile_endpoint(profile_id: int):
         
     delete_profile(profile_id)
     return {"message": "Profile deleted successfully"}
+
+class TrackJobsRequest(BaseModel):
+    locations: str
+    companies: str
+
+@app.post("/api/track")
+async def track_jobs_endpoint(request: TrackJobsRequest):
+    if not request.locations.strip() or not request.companies.strip():
+        raise HTTPException(status_code=400, detail="Locations and companies cannot be empty.")
+    
+    try:
+        jobs = track_company_jobs(request.companies, request.locations)
+        return jobs
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

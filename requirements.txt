@@ -1,7 +1,9 @@
+beautifulsoup4
+requests
+google-genai
+python-dotenv
 fastapi
 uvicorn
 python-multipart
-pdfplumber
 python-docx
-google-genai
-python-dotenv
+pdfplumber
