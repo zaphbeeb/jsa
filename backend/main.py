@@ -130,7 +130,7 @@ async def track_jobs_endpoint(request: TrackJobsRequest):
         raise HTTPException(status_code=400, detail="Locations and companies cannot be empty.")
     
     try:
-        jobs = track_company_jobs(request.companies, request.locations)
+        jobs = track_company_jobs(request.companies, request.locations, request.profile_id)
         return jobs
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
