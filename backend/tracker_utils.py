@@ -1,6 +1,8 @@
 import requests
 import datetime
 from datetime import timezone
+from backend.llm_service import calculate_job_match_score
+from backend.database import get_profile_by_id
 
 def fetch_greenhouse_jobs(company, location):
     """
@@ -77,7 +79,7 @@ def fetch_greenhouse_jobs(company, location):
         print(f"Error fetching from Greenhouse: {e}")
         return []
 
-def track_company_jobs(companies_str, locations_str):
+def track_company_jobs(companies_str, locations_str, profile_id=None):
     companies = [c.strip() for c in companies_str.split(',') if c.strip()]
     locations = [l.strip() for l in locations_str.split(',') if l.strip()]
     
@@ -96,4 +98,20 @@ def track_company_jobs(companies_str, locations_str):
         if key not in unique_jobs:
             unique_jobs[key] = j
             
-    return sorted(list(unique_jobs.values()), key=lambda x: (x.get('company', ''), x.get('location', ''), x.get('title', '')))
+    unique_jobs_list = list(unique_jobs.values())
+    
+    if profile_id:
+        profile = get_profile_by_id(profile_id)
+        if profile:
+            profile_text = profile.get("parsed_markdown", profile.get("original_text", ""))
+            if profile_text:
+                for j in unique_jobs_list:
+                    print(f"Scoring {j.get('title')} at {j.get('company')}...")
+                    j['match_score'] = calculate_job_match_score(
+                        job_title=j.get('title', ''),
+                        job_description=j.get('description', ''),
+                        profile_text=profile_text
+                    )
+                return sorted(unique_jobs_list, key=lambda x: (-x.get('match_score', 0), x.get('company', ''), x.get('location', ''), x.get('title', '')))
+
+    return sorted(unique_jobs_list, key=lambda x: (x.get('company', ''), x.get('location', ''), x.get('title', '')))

@@ -42,3 +42,42 @@ def parse_resume_with_llm(resume_text: str) -> str:
         return response.text
     except Exception as e:
         return f"Error communicating with Gemini API: {str(e)}"
+
+def calculate_job_match_score(job_title: str, job_description: str, profile_text: str) -> int:
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key or not genai:
+        return 0
+
+    try:
+        client = genai.Client(api_key=api_key)
+        
+        prompt = """
+        You are an expert technical recruiter matching a candidate's resume to a job opportunity.
+        Your task is to analyze the candidate's profile against the job title and description.
+        
+        Output ONLY a single integer between 0 and 100 representing the match score (0 = no match, 100 = perfect match).
+        Do not include any explanation, just the number.
+
+        Job Title: {title}
+        Job Description: {desc}
+        
+        Candidate Profile:
+        ---
+        {profile}
+        ---
+        """
+        
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt.format(title=job_title, desc=job_description, profile=profile_text),
+        )
+        
+        score_text = response.text.strip()
+        import re
+        match = re.search(r'\d+', score_text)
+        if match:
+            return min(100, max(0, int(match.group())))
+        return 0
+    except Exception as e:
+        print(f"Error calculating score: {e}")
+        return 0

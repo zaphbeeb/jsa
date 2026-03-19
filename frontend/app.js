@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmSaveBtn = document.getElementById('confirm-save-btn');
     const cancelSaveBtn = document.getElementById('cancel-save-btn');
     const profilesList = document.getElementById('profiles-list');
+    const profileSelector = document.getElementById('profile-selector');
 
     // Main Tabs setup
     const mainTabs = document.querySelectorAll('.main-tab');
@@ -273,6 +274,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const req = await fetch(PROFILES_URL);
             const profiles = await req.json();
             
+            if (profileSelector) {
+                profileSelector.innerHTML = '<option value="" style="background: #1e1b4b;">-- Select a Profile --</option>';
+            }
+
             profilesList.innerHTML = '';
             if (profiles.length === 0) {
                 profilesList.innerHTML = '<li style="color:var(--text-muted);font-size:0.9rem;">No saved profiles.</li>';
@@ -280,6 +285,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             profiles.forEach(p => {
+                if (profileSelector) {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.name;
+                    opt.style.background = '#1e1b4b';
+                    profileSelector.appendChild(opt);
+                }
+
                 const li = document.createElement('li');
                 li.className = 'profile-item';
                 li.style.display = 'flex';
@@ -378,6 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
         trackJobsBtn.addEventListener('click', async () => {
             const locations = locationsInput.value.trim();
             const companies = companiesInput.value.trim();
+            const profile_id = profileSelector ? profileSelector.value : null;
             
             if (!locations || !companies) {
                 return alert("Please enter both locations and companies.");
@@ -391,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const req = await fetch('/api/track', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ locations, companies })
+                    body: JSON.stringify({ locations, companies, profile_id })
                 });
                 
                 if (!req.ok) throw new Error(await req.text());
@@ -438,8 +452,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             div.innerHTML = `
                 <div class="job-header">
-                    <div class="job-title">${job.title}</div>
-                    <div class="badge">${job.company}</div>
+                    <div class="job-title-row" style="display:flex; justify-content:space-between; align-items:flex-start; width:100%; gap:0.5rem;">
+                        <div class="job-title" style="flex:1;">${job.title}</div>
+                        <div style="display:flex; gap:0.5rem; align-items:center;">
+                            ${job.match_score !== undefined ? `<div class="badge ${job.match_score >= 75 ? 'success' : job.match_score >= 40 ? 'warning' : 'danger'}">Match: ${job.match_score}%</div>` : ''}
+                            <div class="badge">${job.company}</div>
+                        </div>
+                    </div>
                 </div>
                 <div class="job-meta">
                     <span>📍 ${job.location}</span>

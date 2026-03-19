@@ -117,9 +117,12 @@ async def delete_profile_endpoint(profile_id: int):
     delete_profile(profile_id)
     return {"message": "Profile deleted successfully"}
 
+from typing import Optional
+
 class TrackJobsRequest(BaseModel):
     locations: str
     companies: str
+    profile_id: Optional[int] = None
 
 @app.post("/api/track")
 async def track_jobs_endpoint(request: TrackJobsRequest):

@@ -583,3 +583,7 @@ textarea:focus, .input-light:focus {
     background: rgba(255,255,255,0.3);
 }
 
+
+.badge.success { background: linear-gradient(135deg, #10b981, #059669); }
+.badge.warning { background: linear-gradient(135deg, #fbbf24, #d97706); }
+.badge.danger { background: linear-gradient(135deg, #ef4444, #b91c1c); }
