@@ -10,7 +10,7 @@ def fetch_greenhouse_jobs(company, location):
     Filters the jobs by location (substring match) and date (last 30 days).
     """
     board_token = company.lower().strip().replace(' ', '')
-    url = f"https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs"
+    url = f"https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs?content=true"
     
     headers = {
         "Accept": "application/json"
@@ -63,12 +63,18 @@ def fetch_greenhouse_jobs(company, location):
                 job_url = f"https://boards.greenhouse.io/{board_token}"
                 
             formatted_date = job_date.strftime("%Y-%m-%d") if job_date else "Recently"
+
+            job_html_content = job.get("content", "")
+            from bs4 import BeautifulSoup
+            job_desc_clean = BeautifulSoup(job_html_content, "html.parser").get_text(separator=' ', strip=True) if job_html_content else "View details on Greenhouse"
+            # Cap at 4000 characters to keep LLM context small
+            job_desc_clean = job_desc_clean[:4000]
             
             filtered_jobs.append({
                 "title": title,
                 "company": company,
                 "location": job_loc,
-                "description": "View details on Greenhouse",
+                "description": job_desc_clean,
                 "date": formatted_date,
                 "url": job_url
             })
